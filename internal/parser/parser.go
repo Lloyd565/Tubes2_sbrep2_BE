@@ -10,6 +10,7 @@ type Node struct {
 	Tag      string
 	ID       string
 	Classes  []string
+	Attr     map[string]string
 	Parent   *Node
 	Depth    int
 	Children []*Node
@@ -20,6 +21,7 @@ func Parse(htmlStr string) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var root *html.Node
 	var findHTML func(*html.Node)
 	findHTML = func(n *html.Node) {
@@ -27,11 +29,12 @@ func Parse(htmlStr string) (*Node, error) {
 			root = n
 			return
 		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			findHTML(c)
+		for child := n.FirstChild; child != nil; child = child.NextSibling {
+			findHTML(child)
 		}
 	}
 	findHTML(doc)
+
 	return buildNode(root, nil, 0), nil
 }
 
@@ -44,8 +47,11 @@ func buildNode(n *html.Node, parent *Node, depth int) *Node {
 		Tag:    n.Data,
 		Parent: parent,
 		Depth:  depth,
+		Attr:   make(map[string]string),
 	}
+
 	for _, attr := range n.Attr {
+		node.Attr[attr.Key] = attr.Val
 		if attr.Key == "id" {
 			node.ID = attr.Val
 		}
@@ -53,11 +59,13 @@ func buildNode(n *html.Node, parent *Node, depth int) *Node {
 			node.Classes = strings.Fields(attr.Val)
 		}
 	}
+
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode {
 			child := buildNode(c, node, depth+1)
 			node.Children = append(node.Children, child)
 		}
 	}
+
 	return node
 }
