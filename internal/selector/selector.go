@@ -3,21 +3,45 @@ package selector
 import "tubes2/backend/internal/parser"
 
 // Combinators
-func ChildCombinator(a, b *parser.Node) bool { // Symbol: ">"
+func ChildCombinator(a, b *parser.Node) bool {
 	return a == b.Parent
 }
 
-func DescendentCombinator(a, b *parser.Node) bool { // Symbol: " "
-	depth := b.Depth
-	t := b
-	for depth > a.Depth {
-		t = t.Parent
-		depth--
+func DescendentCombinator(a, b *parser.Node) bool {
+	current := b.Parent
+	for current != nil {
+		if current == a {
+			return true
+		}
+		current = current.Parent
 	}
-	return a == t
+	return false
+	// depth := b.Depth
+	// t := b
+	// for depth > a.Depth {
+	// 	t = t.Parent
+	// 	depth--
+	// }
+	// return a == t
 }
 
-func AdjSiblingCombinator(a, b *parser.Node) bool { // Symbol: "+"
+func AdjSiblingCombinator(a, b *parser.Node) bool {
+	if a.Parent == nil || a.Parent != b.Parent {
+		return false
+	}
+	children := a.Parent.Children
+	for i, child := range children {
+		if child == a {
+			if i+1 >= len(children) {
+				return false // a adalah anak terakhir
+			}
+			return children[i+1] == b
+		}
+	}
+	return false
+}
+
+func GenSiblingCombinator(a, b *parser.Node) bool {
 	parent := a.Parent
 	if parent != b.Parent {
 		return false
@@ -26,19 +50,7 @@ func AdjSiblingCombinator(a, b *parser.Node) bool { // Symbol: "+"
 	for parent.Children[idx] != a {
 		idx++
 	}
-	return parent.Children[idx+1] == b
-}
-
-func GenSiblingCombinator(a, b *parser.Node) bool { // Symbol: "~"
-	parent := a.Parent
-	if parent != b.Parent {
-		return false
-	}
-	idx := 0
-	for parent.Children[idx] != a {
-		idx++
-	}
-	for i := idx; i < len(parent.Children); i++ {
+	for i := idx + 1; i < len(parent.Children); i++ {
 		if parent.Children[i] == b {
 			return true
 		}
@@ -52,33 +64,35 @@ func TagSelector(a *parser.Node, tag string) bool {
 }
 
 func ClassSelector(a *parser.Node, classes []string) bool {
-	if len(classes) == 0 {
-		return true
-	}
-	if len(a.Classes) < len(classes) {
-		return false
-	}
-	temp := classes
-	for _, cls1 := range a.Classes {
-		for i, cls2 := range temp {
-			if cls1 == cls2 {
-				if i == len(temp)-1 {
-					temp = temp[:i]
-					break
-				}
-				temp = append(temp[:i-1], temp[i+1:]...)
+	for _, target := range classes {
+		found := false
+		for _, has := range a.Classes {
+			if has == target {
+				found = true
 				break
 			}
 		}
-		if len(temp) == 0 {
-			return true
+		if !found {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
-func AttrSelector(a *parser.Node, attr string, val string)
+func AttrSelector(a *parser.Node, attr string, val string) bool {
+	v, exist := a.Attr[attr]
+	if !exist {
+		return false
+	}
+	if val == "" {
+		return true
+	}
+	return v == val
+}
 
 func IDSelector(a *parser.Node, id string) bool {
 	return a.ID == id
 }
+
+// Matching Selector
+func MatchSelector(node *parser.Node)
