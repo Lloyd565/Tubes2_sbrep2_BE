@@ -1,50 +1,8 @@
 package selector
 
-import "tubes2/backend/internal/parser"
-
-// Combinators
-func ChildCombinator(a, b *parser.Node) bool { // Symbol: ">"
-	return a == b.Parent
-}
-
-func DescendentCombinator(a, b *parser.Node) bool { // Symbol: " "
-	depth := b.Depth
-	t := b
-	for depth > a.Depth {
-		t = t.Parent
-		depth--
-	}
-	return a == t
-}
-
-func AdjSiblingCombinator(a, b *parser.Node) bool { // Symbol: "+"
-	parent := a.Parent
-	if parent != b.Parent {
-		return false
-	}
-	idx := 0
-	for parent.Children[idx] != a {
-		idx++
-	}
-	return parent.Children[idx+1] == b
-}
-
-func GenSiblingCombinator(a, b *parser.Node) bool { // Symbol: "~"
-	parent := a.Parent
-	if parent != b.Parent {
-		return false
-	}
-	idx := 0
-	for parent.Children[idx] != a {
-		idx++
-	}
-	for i := idx; i < len(parent.Children); i++ {
-		if parent.Children[i] == b {
-			return true
-		}
-	}
-	return false
-}
+import (
+	"tubes2/backend/internal/parser"
+)
 
 // Selectors
 func TagSelector(a *parser.Node, tag string) bool {
@@ -81,4 +39,85 @@ func AttrSelector(a *parser.Node, attr string, val string)
 
 func IDSelector(a *parser.Node, id string) bool {
 	return a.ID == id
+}
+
+// combo
+
+func ComboSelector(a *parser.Node, selectors []string) bool {
+	var classes []string
+	for _, str := range selectors {
+		switch str[0] {
+		case '.':
+			classes = append(classes, str[1:len(str)-1])
+		case '#':
+			if IDSelector(a, str[1:len(str)-1]) {
+				return false
+			}
+		case '[': // TODO attribute selector
+		default:
+			if TagSelector(a, str) {
+				return false
+			}
+		}
+	}
+	return ClassSelector(a, classes)
+}
+
+func ComboCombinator(a *parser.Node, selector []string) bool {
+	i := len(selector) - 1
+	selectors := parser.SelectorParser(selector[i])
+	if !ComboSelector(a, selectors) {
+		return false
+	}
+	for i := i - 1; i >= 0; i-- {
+		switch selector[i][0] {
+		case '>':
+			if i == 0 {
+				return false
+			}
+			selectors = parser.SelectorParser(selector[i-1])
+			if ComboSelector(a.Parent, selectors) {
+				return false
+			}
+		case '+':
+			if i == 0 {
+				return false
+			}
+			selectors = parser.SelectorParser(selector[i-1])
+			for i, node := range a.Parent.Children {
+				if node == a {
+					if i == 0 {
+						return false
+					}
+					if !ComboSelector(a.Parent.Children[i-1], selectors) {
+						return false
+					}
+					break
+				}
+			}
+		case '~':
+			if i == 0 {
+				return false
+			}
+			selectors = parser.SelectorParser(selector[i-1])
+			for _, node := range a.Parent.Children {
+				if node == a {
+					return false
+				}
+				if ComboSelector(node, selectors) {
+					break
+				}
+			}
+		default:
+			selectors = parser.SelectorParser(selector[i])
+			temp := a.Parent
+			for ComboSelector(temp, selectors) {
+				if temp == nil {
+					return false
+				}
+				temp = temp.Parent
+			}
+		}
+	}
+	return true
 }
