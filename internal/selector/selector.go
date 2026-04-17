@@ -16,26 +16,46 @@ func ClassSelector(a *parser.Node, classes []string) bool {
 	if len(a.Classes) < len(classes) {
 		return false
 	}
-	temp := classes
-	for _, cls1 := range a.Classes {
-		for i, cls2 := range temp {
+	for i, cls1 := range classes {
+		found := false
+		for _, cls2 := range a.Classes {
 			if cls1 == cls2 {
-				if i == len(temp)-1 {
-					temp = temp[:i]
+				found = true
+				if i == len(classes)-1 {
+					classes = classes[:i]
 					break
 				}
-				temp = append(temp[:i-1], temp[i+1:]...)
+				classes = append(classes[:i-1], classes[i+1:]...)
 				break
 			}
 		}
-		if len(temp) == 0 {
-			return true
+		if !found {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
-func AttrSelector(a *parser.Node, attr string, val string)
+func AttrSelector(a *parser.Node, attrs map[string]string) bool {
+	for attr, val := range attrs {
+		found := false
+		for attr1, val1 := range a.Attributes {
+			if attr == attr1 {
+				if val == "" || val == val1 {
+					delete(attrs, attr)
+					found = true
+					break
+				} else {
+					return false
+				}
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
 
 func IDSelector(a *parser.Node, id string) bool {
 	return a.ID == id
@@ -45,6 +65,7 @@ func IDSelector(a *parser.Node, id string) bool {
 
 func ComboSelector(a *parser.Node, selectors []string) bool {
 	var classes []string
+	var attrs map[string]string
 	for _, str := range selectors {
 		switch str[0] {
 		case '.':
@@ -53,14 +74,16 @@ func ComboSelector(a *parser.Node, selectors []string) bool {
 			if IDSelector(a, str[1:len(str)-1]) {
 				return false
 			}
-		case '[': // TODO attribute selector
+		case '[':
+			attr, val := parser.AttrParser(str)
+			attrs[attr] = val
 		default:
 			if TagSelector(a, str) {
 				return false
 			}
 		}
 	}
-	return ClassSelector(a, classes)
+	return ClassSelector(a, classes) && AttrSelector(a, attrs)
 }
 
 func ComboCombinator(a *parser.Node, selector []string) bool {
@@ -69,55 +92,55 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 	if !ComboSelector(a, selectors) {
 		return false
 	}
+	if selector[0][0] == '>' || selector[0][0] == '+' || selector[0][0] == '~' || selector[0][0] == ',' {
+		return false
+	}
+	valid := true
 	for i := i - 1; i >= 0; i-- {
 		switch selector[i][0] {
 		case '>':
-			if i == 0 {
-				return false
-			}
 			selectors = parser.SelectorParser(selector[i-1])
 			if ComboSelector(a.Parent, selectors) {
-				return false
+				valid = false
 			}
 		case '+':
-			if i == 0 {
-				return false
-			}
 			selectors = parser.SelectorParser(selector[i-1])
 			for i, node := range a.Parent.Children {
 				if node == a {
 					if i == 0 {
-						return false
+						valid = false
 					}
 					if !ComboSelector(a.Parent.Children[i-1], selectors) {
-						return false
+						valid = false
 					}
 					break
 				}
 			}
 		case '~':
-			if i == 0 {
-				return false
-			}
 			selectors = parser.SelectorParser(selector[i-1])
 			for _, node := range a.Parent.Children {
 				if node == a {
-					return false
+					valid = false
 				}
 				if ComboSelector(node, selectors) {
 					break
 				}
 			}
+		case ',':
+			if valid {
+				return true
+			}
+			valid = true
 		default:
 			selectors = parser.SelectorParser(selector[i])
 			temp := a.Parent
 			for ComboSelector(temp, selectors) {
 				if temp == nil {
-					return false
+					valid = false
 				}
 				temp = temp.Parent
 			}
 		}
 	}
-	return true
+	return false
 }

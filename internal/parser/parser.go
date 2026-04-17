@@ -7,12 +7,13 @@ import (
 )
 
 type Node struct {
-	Tag      string
-	ID       string
-	Classes  []string
-	Parent   *Node
-	Depth    int
-	Children []*Node
+	Tag        string
+	ID         string
+	Classes    []string
+	Parent     *Node
+	Depth      int
+	Children   []*Node
+	Attributes map[string]string
 }
 
 func Parse(htmlStr string) (*Node, error) {
@@ -86,4 +87,19 @@ func SelectorParser(selector string) []string {
 	return res
 }
 
-// TODO: attribute parser
+func AttrParser(attrs string) (string, string) {
+	attrs = attrs[1 : len(attrs)-2]
+	idx := 0
+	var attr string
+	for i, str := range attrs {
+		if str == '=' {
+			attr = attrs[idx : i-1]
+			idx = i + 1
+			break
+		}
+		if i == len(attrs)-1 {
+			return attrs, ""
+		}
+	}
+	return attr, attrs[idx:]
+}
