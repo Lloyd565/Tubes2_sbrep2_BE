@@ -61,3 +61,29 @@ func buildNode(n *html.Node, parent *Node, depth int) *Node {
 	}
 	return node
 }
+
+func CombinatorParser(selector string) []string {
+	var res []string
+	idx := 0
+	for i, str := range selector {
+		if str == ' ' {
+			res = append(res, selector[idx:i])
+			idx = i + 1
+		}
+	}
+	return res
+}
+
+func SelectorParser(selector string) []string {
+	var res []string
+	idx := 0
+	for i, str := range selector {
+		if (str == '.' || str == '[' || str == '#') && i != 0 {
+			res = append(res, selector[idx:i-1])
+			idx = i
+		}
+	}
+	return res
+}
+
+// TODO: attribute parser
