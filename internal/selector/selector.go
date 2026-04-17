@@ -41,7 +41,7 @@ func AttrSelector(a *parser.Node, attrs map[string]string) bool {
 		found := false
 		for attr1, val1 := range a.Attributes {
 			if attr == attr1 {
-				if val == "" || val == val1 {
+				if val == "" || val == val1 || val == val1[1:len(val1)-2] {
 					delete(attrs, attr)
 					found = true
 					break
@@ -65,7 +65,7 @@ func IDSelector(a *parser.Node, id string) bool {
 
 func ComboSelector(a *parser.Node, selectors []string) bool {
 	var classes []string
-	var attrs map[string]string
+	attrs := make(map[string]string)
 	for _, str := range selectors {
 		switch str[0] {
 		case '.':
