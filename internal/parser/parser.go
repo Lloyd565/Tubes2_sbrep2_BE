@@ -47,11 +47,11 @@ func buildNode(n *html.Node, parent *Node, depth int) *Node {
 		Tag:    n.Data,
 		Parent: parent,
 		Depth:  depth,
-		Attr:   make(map[string]string),
+		Attributes:   make(map[string]string),
 	}
 
 	for _, attr := range n.Attr {
-		node.Attr[attr.Key] = attr.Val
+		node.Attributes[attr.Key] = attr.Val
 		if attr.Key == "id" {
 			node.ID = attr.Val
 		}
