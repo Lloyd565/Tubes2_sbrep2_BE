@@ -7,13 +7,13 @@ import (
 )
 
 type Node struct {
-	Tag      string
-	ID       string
-	Classes  []string
-	Attr     map[string]string
-	Parent   *Node
-	Depth    int
-	Children []*Node
+	Tag        string
+	ID         string
+	Classes    []string
+	Parent     *Node
+	Depth      int
+	Children   []*Node
+	Attributes map[string]string
 }
 
 func Parse(htmlStr string) (*Node, error) {
@@ -68,4 +68,45 @@ func buildNode(n *html.Node, parent *Node, depth int) *Node {
 	}
 
 	return node
+}
+
+func CombinatorParser(selector string) []string {
+	var res []string
+	idx := 0
+	for i, str := range selector {
+		if str == ' ' {
+			res = append(res, selector[idx:i])
+			idx = i + 1
+		}
+	}
+	return res
+}
+
+func SelectorParser(selector string) []string {
+	var res []string
+	idx := 0
+	for i, str := range selector {
+		if (str == '.' || str == '[' || str == '#') && i != 0 {
+			res = append(res, selector[idx:i-1])
+			idx = i
+		}
+	}
+	return res
+}
+
+func AttrParser(attrs string) (string, string) {
+	attrs = attrs[1 : len(attrs)-2]
+	idx := 0
+	var attr string
+	for i, str := range attrs {
+		if str == '=' {
+			attr = attrs[idx : i-1]
+			idx = i + 1
+			break
+		}
+		if i == len(attrs)-1 {
+			return attrs, ""
+		}
+	}
+	return attr, attrs[idx:]
 }

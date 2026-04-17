@@ -1,8 +1,11 @@
 package traversal
 
-import "tubes2/backend/internal/parser"
+import (
+	"tubes2/backend/internal/parser"
+	"tubes2/backend/internal/selector"
+)
 
-func BFS(limit int, root *parser.Node) ([]parser.Node, []parser.Node) {
+func BFS(limit int, root *parser.Node, selectors []string) ([]parser.Node, []parser.Node) {
 	if root == nil {
 		return nil, nil
 	}
@@ -11,7 +14,7 @@ func BFS(limit int, root *parser.Node) ([]parser.Node, []parser.Node) {
 	var res []parser.Node
 	for count := 0; len(queue) > 0; {
 		visited = append(visited, *queue[0])
-		if true /*TODO: Selectors and Combinators*/ {
+		if selector.ComboCombinator(root, selectors) {
 			res = append(res, *queue[0])
 			count++
 			if count == limit {
