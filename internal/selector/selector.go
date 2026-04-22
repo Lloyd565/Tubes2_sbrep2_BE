@@ -6,7 +6,7 @@ import (
 
 // Selectors
 func TagSelector(a *parser.Node, tag string) bool {
-	return a.Tag == tag
+	return a.Tag == tag || tag == "*"
 }
 
 func ClassSelector(a *parser.Node, classes []string) bool {
@@ -66,6 +66,9 @@ func IDSelector(a *parser.Node, id string) bool {
 func ComboSelector(a *parser.Node, selectors []string) bool {
 	var classes []string
 	attrs := make(map[string]string)
+	if len(selectors) == 0 && selectors[0] == "*" {
+		return true
+	}
 	for _, str := range selectors {
 		switch str[0] {
 		case '.':
