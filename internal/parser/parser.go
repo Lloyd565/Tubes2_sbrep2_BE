@@ -44,10 +44,10 @@ func buildNode(n *html.Node, parent *Node, depth int) *Node {
 	}
 
 	node := &Node{
-		Tag:    n.Data,
-		Parent: parent,
-		Depth:  depth,
-		Attributes:   make(map[string]string),
+		Tag:        n.Data,
+		Parent:     parent,
+		Depth:      depth,
+		Attributes: make(map[string]string),
 	}
 
 	for _, attr := range n.Attr {
@@ -75,7 +75,12 @@ func CombinatorParser(selector string) []string {
 	idx := 0
 	for i, str := range selector {
 		if str == ' ' {
-			res = append(res, selector[idx:i])
+			if selector[i-1] == ',' {
+				res = append(res, selector[idx:i-2])
+				res = append(res, selector[i-1:i-1])
+			} else {
+				res = append(res, selector[idx:i-1])
+			}
 			idx = i + 1
 		}
 	}
