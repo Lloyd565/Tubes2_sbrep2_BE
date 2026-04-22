@@ -102,11 +102,17 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 	for i := i - 1; i >= 0; i-- {
 		switch selector[i][0] {
 		case '>':
+			if !valid {
+				continue
+			}
 			selectors = parser.SelectorParser(selector[i-1])
 			if ComboSelector(a.Parent, selectors) {
 				valid = false
 			}
 		case '+':
+			if !valid {
+				continue
+			}
 			selectors = parser.SelectorParser(selector[i-1])
 			for i, node := range a.Parent.Children {
 				if node == a {
@@ -120,6 +126,9 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 				}
 			}
 		case '~':
+			if !valid {
+				continue
+			}
 			selectors = parser.SelectorParser(selector[i-1])
 			for _, node := range a.Parent.Children {
 				if node == a {
@@ -135,11 +144,15 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 			}
 			valid = true
 		default:
+			if !valid {
+				continue
+			}
 			selectors = parser.SelectorParser(selector[i])
 			temp := a.Parent
 			for ComboSelector(temp, selectors) {
 				if temp == nil {
 					valid = false
+
 				}
 				temp = temp.Parent
 			}
