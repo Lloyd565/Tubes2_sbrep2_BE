@@ -66,6 +66,9 @@ func IDSelector(a *parser.Node, id string) bool {
 func ComboSelector(a *parser.Node, selectors []string) bool {
 	var classes []string
 	attrs := make(map[string]string)
+	if a == nil {
+		return false
+	}
 	if len(selectors) == 0 && selectors[0] == "*" {
 		return true
 	}
@@ -106,9 +109,7 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 				continue
 			}
 			selectors = parser.SelectorParser(selector[i-1])
-			if ComboSelector(a.Parent, selectors) {
-				valid = false
-			}
+			valid = ClassSelector(a.Parent, selectors)
 		case '+':
 			if !valid {
 				continue
@@ -118,8 +119,7 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 				if node == a {
 					if i == 0 {
 						valid = false
-					}
-					if !ComboSelector(a.Parent.Children[i-1], selectors) {
+					} else if !ComboSelector(a.Parent.Children[i-1], selectors) {
 						valid = false
 					}
 					break
@@ -148,11 +148,19 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 				continue
 			}
 			selectors = parser.SelectorParser(selector[i])
+			if selector[i+1][0] == ',' {
+				if i == 0 {
+					return ComboSelector(a, selectors)
+				} else {
+					valid = ComboSelector(a, selectors)
+					continue
+				}
+			}
 			temp := a.Parent
-			for ComboSelector(temp, selectors) {
+			for !ComboSelector(temp, selectors) {
 				if temp == nil {
 					valid = false
-
+					break
 				}
 				temp = temp.Parent
 			}
