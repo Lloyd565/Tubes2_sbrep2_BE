@@ -1,27 +1,40 @@
 package traversal
 
 import (
+	"fmt"
 	"tubes2/backend/internal/parser"
 	"tubes2/backend/internal/selector"
 )
 
-func DFS(count, limit int, root *parser.Node, selectors []string) ([]parser.Node, []parser.Node) { // call with count = 0
-	var visited []parser.Node
-	var res []parser.Node
-	visited = append(visited, *root)
-	if selector.ComboCombinator(root, selectors) {
-		if count == limit {
-			return res, visited
-		}
-		res = append(res, *root)
-		count++
+func DFS(limit int, root *parser.Node, selectors []string) ([]*parser.Node, []*parser.Node, []string) {
+	var matches []*parser.Node
+	var visited []*parser.Node
+	var log []string
+	dfsHelper(root, selectors, limit, &matches, &visited, &log)
+	return matches, visited, log
+}
+
+
+func dfsHelper(node *parser.Node, selectors []string, limit int, matches *[]*parser.Node, visited *[]*parser.Node, log *[]string) bool {
+	if node == nil {
+		return false
 	}
-	for _, child := range root.Children {
-		if count == limit {
-			break
+
+	*visited = append(*visited, node)
+	*log = append(*log, fmt.Sprintf("Visit: %s (depth=%d)", nodeLabel(node), node.Depth))
+
+	if selector.ComboCombinator(node, selectors) {
+		*matches = append(*matches, node)
+		*log = append(*log, fmt.Sprintf("Match: %s (depth=%d)", nodeLabel(node), node.Depth))
+		if limit > 0 && len(*matches) == limit {
+			return true
 		}
-		res1, visited1 := DFS(count, limit, child, selectors)
-		res, visited = append(res, res1...), append(visited, visited1...)
 	}
-	return res, visited
+
+	for _, child := range node.Children {
+		if dfsHelper(child, selectors, limit, matches, visited, log) {
+			return true
+		}
+	}
+	return false
 }
