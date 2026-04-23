@@ -1,30 +1,41 @@
 package traversal
 
 import (
+	"fmt"
 	"tubes2/backend/internal/parser"
 	"tubes2/backend/internal/selector"
 )
 
-func BFS(limit int, root *parser.Node, selectors []string) ([]parser.Node, []parser.Node) {
+func BFS(limit int, root *parser.Node, selectors []string) ([]*parser.Node, []*parser.Node, []string) {
 	if root == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
+
 	queue := []*parser.Node{root}
-	var visited []parser.Node
-	var res []parser.Node
-	for count := 0; len(queue) > 0; {
-		visited = append(visited, *queue[0])
-		if selector.ComboCombinator(root, selectors) {
-			res = append(res, *queue[0])
+	var visited []*parser.Node
+	var matches []*parser.Node
+	var log []string
+	count := 0
+
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+
+		visited = append(visited, node)
+		log = append(log, fmt.Sprintf("Visit: %s (depth=%d)", nodeLabel(node), node.Depth))
+
+		if selector.ComboCombinator(node, selectors) {
+			matches = append(matches, node)
 			count++
-			if count == limit {
-				return res, visited
+			log = append(log, fmt.Sprintf("Match: %s (depth=%d)", nodeLabel(node), node.Depth))
+			if limit > 0 && count == limit {
+				return matches, visited, log
 			}
 		}
-		queue = queue[1:]
-		for _, child := range queue[0].Children {
+
+		for _, child := range node.Children {
 			queue = append(queue, child)
 		}
 	}
-	return res, visited
+	return matches, visited, log
 }
