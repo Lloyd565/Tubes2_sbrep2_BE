@@ -26,12 +26,110 @@ func ClassSelector(a *parser.Node, classes []string) bool {
 
 func AttrSelector(a *parser.Node, attrs map[string]string) bool {
 	for attr, val := range attrs {
-		nodeVal, exists := a.Attributes[attr]
-		if !exists {
-			return false
-		}
-		if val != "" && val != nodeVal {
-			return false
+		switch attr[len(attr)-1] {
+		case '~':
+			attr = attr[:len(attr)-2]
+			nodeVal, exists := a.Attributes[attr]
+			if !exists {
+				return false
+			}
+			if len(nodeVal) < len(val) {
+				return false
+			}
+			found := false
+			for i := 0; i <= len(nodeVal)-len(val); i++ {
+				if val == nodeVal[i:len(val)-1+i] {
+					switch i {
+					case 0:
+						if nodeVal[len(val)+i] == ' ' {
+							found = true
+							break
+						}
+					case len(nodeVal) - len(val):
+						if nodeVal[i-1] == ' ' {
+							found = true
+							break
+						}
+					default:
+						if nodeVal[len(val)+i] == ' ' && nodeVal[i-1] == ' ' {
+							found = true
+							break
+						}
+					}
+				}
+			}
+			if !found {
+				return false
+			}
+		case '|':
+			attr = attr[:len(attr)-2]
+			nodeVal, exists := a.Attributes[attr]
+			if !exists {
+				return false
+			}
+			if len(nodeVal) < len(val) {
+				return false
+			}
+			if val == nodeVal[:len(val)-1] {
+				if len(val) < len(nodeVal) {
+					if nodeVal[len(val)] != '-' {
+						return false
+					}
+				}
+			} else {
+				return false
+			}
+		case '^':
+			attr = attr[:len(attr)-2]
+			nodeVal, exists := a.Attributes[attr]
+			if !exists {
+				return false
+			}
+			if len(nodeVal) < len(val) {
+				return false
+			}
+			if val != nodeVal[:len(val)-1] {
+				return false
+			}
+		case '$':
+			attr = attr[:len(attr)-2]
+			nodeVal, exists := a.Attributes[attr]
+			if !exists {
+				return false
+			}
+			if len(nodeVal) < len(val) {
+				return false
+			}
+			if val != nodeVal[len(nodeVal)-len(val):] {
+				return false
+			}
+		case '*':
+			attr = attr[:len(attr)-2]
+			nodeVal, exists := a.Attributes[attr]
+			if !exists {
+				return false
+			}
+			if len(nodeVal) < len(val) {
+				return false
+			}
+			found := false
+			for i := 0; i <= len(nodeVal)-len(val); i++ {
+				if val == nodeVal[:len(val)-1] {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		default:
+			nodeVal, exists := a.Attributes[attr]
+			if !exists {
+				return false
+			}
+			if val != nodeVal && val != "" {
+				return false
+			}
 		}
 	}
 	return true
