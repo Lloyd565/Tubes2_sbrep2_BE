@@ -110,10 +110,21 @@ func CombinatorParser(selector string) []string {
 		cur.Reset()
 	}
 
+	inBrt := false
 	i := 0
 	for i < len(selector) {
 		ch := selector[i]
+
+		if ch == '[' {
+			inBrt = true
+		} else if ch == ']' {
+			inBrt = false
+		}
+
 		switch {
+		case inBrt:
+			cur.WriteByte(ch)
+
 		case ch == ' ':
 			flushCur()
 			for i+1 < len(selector) && selector[i+1] == ' ' {
@@ -154,7 +165,11 @@ func AttrParser(attrs string) (string, string) {
 	attrs = attrs[1 : len(attrs)-1]
 	for i, ch := range attrs {
 		if ch == '=' {
-			return attrs[:i], attrs[i+1:]
+			val := attrs[i+1:]
+			if len(val) >= 2 && (val[0] == '"' || val[0] == '\'') && val[len(val)-1] == val[0] {
+				val = val[1 : len(val)-1]
+			}
+			return attrs[:i], val
 		}
 	}
 	return attrs, ""

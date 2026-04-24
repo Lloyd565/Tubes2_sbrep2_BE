@@ -1,6 +1,7 @@
 package selector
 
 import (
+	"strings"
 	"tubes2/backend/internal/parser"
 )
 
@@ -26,12 +27,51 @@ func ClassSelector(a *parser.Node, classes []string) bool {
 
 func AttrSelector(a *parser.Node, attrs map[string]string) bool {
 	for attr, val := range attrs {
-		nodeVal, exists := a.Attributes[attr]
+		var realAttr string
+		var operator byte
+		if len(attr) > 0 && (attr[len(attr)-1] == '~' || attr[len(attr)-1] == '|' || attr[len(attr)-1] == '^' || attr[len(attr)-1] == '$' || attr[len(attr)-1] == '*') {
+			realAttr = attr[:len(attr)-1]
+			operator = attr[len(attr)-1]
+		} else {
+			realAttr = attr
+		}
+		nodeVal, exists := a.Attributes[realAttr]
 		if !exists {
 			return false
 		}
-		if val != "" && val != nodeVal {
-			return false
+		switch operator {
+		case '~':
+			words := strings.Fields(nodeVal)
+			found := false
+			for _, word := range words {
+				if word == val {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		case '|':
+			if nodeVal != val && !strings.HasPrefix(nodeVal, val+"-") {
+				return false
+			}
+		case '^':
+			if !strings.HasPrefix(nodeVal, val) {
+				return false
+			}
+		case '$':
+			if !strings.HasSuffix(nodeVal, val) {
+				return false
+			}
+		case '*':
+			if !strings.Contains(nodeVal, val) {
+				return false
+			}
+		default:
+			if val != nodeVal && val != "" {
+				return false
+			}
 		}
 	}
 	return true
@@ -72,7 +112,6 @@ func ComboSelector(a *parser.Node, selectors []string) bool {
 	}
 	return ClassSelector(a, classes) && AttrSelector(a, attrs)
 }
-
 func ComboCombinator(a *parser.Node, selector []string) bool {
 	start := 0
 	for i, s := range selector {
@@ -85,20 +124,16 @@ func ComboCombinator(a *parser.Node, selector []string) bool {
 	}
 	return matchSingle(a, selector[start:])
 }
-
 func matchSingle(a *parser.Node, selector []string) bool {
 	if len(selector) == 0 {
 		return false
 	}
-
 	i := len(selector) - 1
 	if !ComboSelector(a, parser.SelectorParser(selector[i])) {
 		return false
 	}
-
 	current := a
 	i--
-
 	for i >= 0 {
 		tok := selector[i]
 		switch tok[0] {
