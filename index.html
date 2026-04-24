@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOM Traversal Tester</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; }
+        h1 { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .panel { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 15px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        textarea { height: 150px; font-family: monospace; padding: 10px; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 15px; overflow-x: auto; border-radius: 4px; max-height: 500px; overflow-y: auto; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>DOM Traversal Tester</h1>
+    <div class="container">
+        <div class="panel">
+            <h3>Input Parameter</h3>
+            <div class="input-group">
+                <label><b>Target URL</b> (Opsional. Jika diisi, akan melakukan web scraping):</label>
+                <input type="text" id="url" placeholder="https://example.com">
+            </div>
+            <div class="input-group">
+                <label><b>Atau Raw HTML</b> (Jika URL kosong):</label>
+                <textarea id="html"><!DOCTYPE html>
+<html>
+<head><title>Test Page</title></head>
+<body>
+    <div id="main" class="container">
+        <h1 class="title">Hello World</h1>
+        <p>Ini adalah paragraf.</p>
+        <div class="card">
+            <span class="badge">New</span>
+        </div>
+    </div>
+</body>
+</html></textarea>
+            </div>
+            <div class="input-group">
+                <label><b>Algoritma Traversal:</b></label>
+                <select id="algorithm">
+                    <option value="bfs">Breadth-First Search (BFS)</option>
+                    <option value="dfs">Depth-First Search (DFS)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label><b>CSS Selector:</b></label>
+                <input type="text" id="selector" value="div.container > h1.title">
+            </div>
+            <div class="input-group">
+                <label><b>Limit Hasil</b> (0 untuk tampilkan semua):</label>
+                <input type="number" id="limit" value="0">
+            </div>
+            <button onclick="traverse()">Jalankan Traversal!</button>
+        </div>
+        <div class="panel" style="flex: 1.5;">
+            <h3>Output JSON</h3>
+            <pre id="output">Hasil akan muncul di sini...</pre>
+        </div>
+    </div>
+
+    <script>
+        async function traverse() {
+            const output = document.getElementById('output');
+            output.textContent = 'Memproses... mohon tunggu...';
+
+            const payload = {
+                url: document.getElementById('url').value.trim(),
+                html: document.getElementById('html').value,
+                algorithm: document.getElementById('algorithm').value,
+                selector: document.getElementById('selector').value,
+                limit: parseInt(document.getElementById('limit').value, 10) || 0
+            };
+
+            try {
+                const response = await fetch('/api/traverse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch(e) {
+                    output.textContent = 'Error: Response bukan JSON.\nStatus: ' + response.status;
+                    return;
+                }
+
+                if (!response.ok) {
+                    output.textContent = 'Error: ' + (data.message || response.statusText) + '\n\n' + JSON.stringify(data, null, 2);
+                    return;
+                }
+
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = 'Gagal melakukan request: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

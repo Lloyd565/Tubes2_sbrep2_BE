@@ -13,14 +13,13 @@ func main() {
 	mux.HandleFunc("/api/traverse", api.TraverseHandler)
 	mux.HandleFunc("/api/log", api.LogHandler)
 
-	// testing works
-	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	if r.URL.Path != "/" {
-	// 		http.NotFound(w, r)
-	// 		return
-	// 	}
-	// 	http.ServeFile(w, r, "index.html")
-	// })
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		http.ServeFile(w, r, "index.html")
+	})
 
 	handler := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
