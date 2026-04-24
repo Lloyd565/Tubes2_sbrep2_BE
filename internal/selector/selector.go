@@ -52,7 +52,7 @@ func ComboSelector(a *parser.Node, selectors []string) bool {
 	attrs := make(map[string]string)
 	for _, str := range selectors {
 		if str == "*" {
-			return true
+			continue
 		}
 		switch str[0] {
 		case '.':
