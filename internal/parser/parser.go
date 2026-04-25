@@ -19,6 +19,7 @@ type Node struct {
 	Classes    []string
 	Parent     *Node
 	Depth      int
+	NodeNum int
 	Children   []*Node
 	Attributes map[string]string
 }
@@ -28,6 +29,7 @@ func Parse(htmlStr string) (*Node, error) {
 
 	virtualRoot := &Node{Tag: "#document", Depth: -1, Attributes: make(map[string]string)}
 	stack := []*Node{virtualRoot}
+	nodeCnt := 1
 
 	for {
 		tt := tokenizer.Next()
@@ -46,8 +48,10 @@ func Parse(htmlStr string) (*Node, error) {
 				Tag:        tagName,
 				Parent:     parent,
 				Depth:      parent.Depth + 1,
+				NodeNum: nodeCnt,
 				Attributes: make(map[string]string),
 			}
+			nodeCnt++
 
 			for hasAttr {
 				var k, v []byte
