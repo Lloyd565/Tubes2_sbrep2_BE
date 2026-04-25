@@ -85,6 +85,9 @@ func ComboSelector(a *parser.Node, selectors []string) bool {
 	if a == nil {
 		return false
 	}
+	if a.Tag == "#text" || a.Tag == "#document" {
+		return false
+	}
 	if len(selectors) == 0 {
 		return true
 	}

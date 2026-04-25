@@ -34,7 +34,9 @@ func BFS(limit int, root *parser.Node, selectors []string) ([]*parser.Node, []*p
 		}
 
 		for _, child := range node.Children {
-			queue = append(queue, child)
+			if child.Tag != "#text" {
+				queue = append(queue, child)
+			}
 		}
 	}
 	return matches, visited, log

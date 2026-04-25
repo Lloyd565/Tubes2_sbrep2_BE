@@ -31,6 +31,7 @@ type NodeJSON struct {
 	Classes    []string          `json:"classes,omitempty"`
 	Depth      int               `json:"depth"`
 	NodeNum int                  `json:"node_number"`
+	Text       string            `json:"text,omitempty"`
 	Attributes map[string]string `json:"attributes,omitempty"`
 	Children   []*NodeJSON       `json:"children,omitempty"`
 	Visited    bool              `json:"visited"`
@@ -43,6 +44,7 @@ type MatchJSON struct {
 	Classes    []string          `json:"classes,omitempty"`
 	Depth      int               `json:"depth"`
 	NodeNum int                  `json:"node_number"`
+	Text       string            `json:"text,omitempty"`
 	Attributes map[string]string `json:"attributes,omitempty"`
 }
 
@@ -132,6 +134,7 @@ func TraverseHandler(w http.ResponseWriter, r *http.Request) {
 			Classes:    n.Classes,
 			Depth:      n.Depth,
 			NodeNum:    n.NodeNum,
+			Text:       n.Text,
 			Attributes: n.Attributes,
 		}
 	}
@@ -221,6 +224,7 @@ func serializeNode(n *parser.Node, visited, matched map[*parser.Node]bool, maxDe
 		Classes:    n.Classes,
 		Depth:      n.Depth,
 		NodeNum:    n.NodeNum,
+		Text:       n.Text,
 		Attributes: n.Attributes,
 		Visited:    visited[n],
 		Matched:    matched[n],

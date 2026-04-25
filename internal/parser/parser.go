@@ -7,10 +7,20 @@ import (
 )
 
 var selfClosing = map[string]bool{
-	"area": true, "base": true, "br": true, "col": true,
-	"embed": true, "hr": true, "img": true, "input": true,
-	"link": true, "meta": true, "param": true, "source": true,
-	"track": true, "wbr": true,
+	"area":   true,
+	"base":   true,
+	"br":     true,
+	"col":    true,
+	"embed":  true,
+	"hr":     true,
+	"img":    true,
+	"input":  true,
+	"link":   true,
+	"meta":   true,
+	"param":  true,
+	"source": true,
+	"track":  true,
+	"wbr":    true,
 }
 
 type Node struct {
@@ -19,7 +29,8 @@ type Node struct {
 	Classes    []string
 	Parent     *Node
 	Depth      int
-	NodeNum int
+	NodeNum    int
+	Text       string
 	Children   []*Node
 	Attributes map[string]string
 }
@@ -39,6 +50,23 @@ func Parse(htmlStr string) (*Node, error) {
 		}
 
 		switch tt {
+		case html.TextToken:
+			text := strings.TrimSpace(string(tokenizer.Text()))
+			if text == "" {
+				continue
+			}
+			parent := stack[len(stack)-1]
+			node := &Node{
+				Tag:        "#text",
+				Text:       text,
+				Parent:     parent,
+				Depth:      parent.Depth + 1,
+				NodeNum:    nodeCnt,
+				Attributes: make(map[string]string),
+			}
+			nodeCnt++
+			parent.Children = append(parent.Children, node)
+
 		case html.StartTagToken, html.SelfClosingTagToken:
 			rawName, hasAttr := tokenizer.TagName()
 			tagName := string(rawName)
@@ -48,7 +76,7 @@ func Parse(htmlStr string) (*Node, error) {
 				Tag:        tagName,
 				Parent:     parent,
 				Depth:      parent.Depth + 1,
-				NodeNum: nodeCnt,
+				NodeNum:    nodeCnt,
 				Attributes: make(map[string]string),
 			}
 			nodeCnt++
@@ -93,11 +121,20 @@ func Parse(htmlStr string) (*Node, error) {
 			return child, nil
 		}
 	}
-	if len(virtualRoot.Children) > 0 {
+	if len(virtualRoot.Children) == 1 {
 		root := virtualRoot.Children[0]
 		root.Parent = nil
 		return root, nil
 	}
+
+	var shiftDepth func(n *Node)
+	shiftDepth = func(n *Node) {
+		n.Depth++
+		for _, c := range n.Children {
+			shiftDepth(c)
+		}
+	}
+	shiftDepth(virtualRoot)
 
 	return virtualRoot, nil
 }
